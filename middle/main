@@ -1,0 +1,81 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List, Optional
+
+app = FastAPI()
+
+class QueueSystem:
+    def __init__(self, capacity: int = 20):
+        self.capacity = capacity
+        self.queue = []
+
+    def clear(self):
+        self.queue = []
+
+    def push(self, item: int) -> bool:
+        if len(self.queue) >= self.capacity:
+            return False
+        self.queue.append(item)
+        return True
+
+    def pop(self) -> Optional[int]:
+        if not self.queue:
+            return None
+        return self.queue.pop(0)
+
+    def size(self) -> int:
+        return len(self.queue)
+
+    def is_full(self) -> bool:
+        return len(self.queue) == self.capacity
+
+    def is_empty(self) -> bool:
+        return len(self.queue) == 0
+
+    def peek(self) -> Optional[int]:
+        if not self.queue:
+            return None
+        return self.queue[0]
+
+    def search_index(self, val: int) -> int:
+        try:
+            return self.queue.index(val)
+        except ValueError:
+            return -1
+
+    def count_val(self, val: int) -> int:
+        return self.queue.count(val)
+
+    def contains_val(self, val: int) -> bool:
+        return val in self.queue
+
+    def get_queue(self) -> List[int]:
+        return self.queue
+
+q = QueueSystem(capacity=20)
+
+class SearchRequest(BaseModel):
+    value: int
+
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Fixed-Size Queue Server Running"}
+
+@app.post("/run_test")
+def run_test():
+    q.clear()
+    test_data = [19, 15, 29, 25, 33, 35, 49, 42, 50, 65, 62, 66, 77, 80]
+    for x in test_data:
+        q.push(x)
+    
+    return {
+        "1_queue_size": q.capacity,
+        "2_pushed_data": test_data,
+        "3_current_count": q.size(),
+        "4_status": {"is_full": q.is_full(), "is_empty": q.is_empty()},
+        "5_front_data": q.peek(),
+        "6_val_42_index": q.search_index(42),
+        "6_val_42_count": q.count_val(42),
+        "7_val_88_exists": q.contains_val(88),
+        "8_full_queue": q.get_queue()
+    }
